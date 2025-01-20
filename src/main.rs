@@ -1,7 +1,21 @@
 use std::env;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
-use std::process::{Command, Stdio};
+use std::process::{ChildStdin, Command, Stdio};
+fn play(reader: &mut BufReader<File>, buffer: &mut [u8; 4096], aplay_stdin: &mut ChildStdin) {
+    loop {
+        //read in blocks of 4096 bytes and store it into buffer
+        let bytes_read = reader.read(buffer).expect("Failed to read the file");
+
+        if bytes_read == 0 {
+            break;
+        }
+        aplay_stdin
+            .write_all(&buffer[..bytes_read])
+            .expect("Failed streaming file");
+    }
+}
+
 fn main() {
     //skip first argument which is executable path
     let args: Vec<String> = env::args().skip(1).collect();
@@ -43,17 +57,7 @@ fn main() {
         .spawn()
         .expect("Failed to start aplay");
     let mut aplay_stdin = child.stdin.take().expect("Failed to open aplay_stdin");
-    loop {
-        //read in blocks of 4096 bytes and store it into buffer
-        let bytes_read = reader.read(&mut buffer).expect("Failed to read the file");
-        if bytes_read == 0 {
-            break;
-        }
-
-        aplay_stdin
-            .write_all(&buffer[..bytes_read])
-            .expect("Failed streaming file");
-    }
+    play(&mut reader, &mut buffer, &mut aplay_stdin);
     println!("Finished");
     return;
 }
