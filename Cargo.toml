@@ -1,6 +1,6 @@
 [package]
-name = "mp3_player"
-version = "0.1.0"
+name = "wav_player"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
